@@ -121,7 +121,7 @@ function App() {
       vaul-drawer-wrapper=""
       className="bg-background circle-background w-full h-svh "
     >
-      <div className="container max-w-sm px-4 font-sans">
+      <div className="container max-w-md px-4 font-sans">
         <header className="flex justify-between items-center py-4">
           <div className="font-semibold">Jafar.Aziz</div>
           <a
