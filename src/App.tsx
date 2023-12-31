@@ -2,19 +2,19 @@ import "@/global.css";
 import "@fontsource-variable/plus-jakarta-sans";
 
 import { Logo } from "./components/logo";
+import { Database } from "./lib/supabase";
 import { useEffect, useState } from "react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
+import { createClient } from "@supabase/supabase-js";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
 import {
   Drawer,
   DrawerTitle,
   DrawerFooter,
   DrawerHeader,
   DrawerContent,
-  DrawerDescription,
 } from "./components/ui/drawer";
-import { createClient } from "@supabase/supabase-js";
-import { Database } from "./lib/supabase";
 
 interface Message {
   isError?: boolean;
@@ -31,6 +31,11 @@ const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
+
+const surpriseLinks: string[] = [
+  "https://jafaraziz.com",
+  "https://justforfunnoreally.dev/",
+];
 
 function App() {
   const [sendingStatus, setSendingStatus] = useState<SendingStatus>({
@@ -98,6 +103,15 @@ function App() {
     setMessage({ ...message, message: "", isError: false });
   };
 
+  const goToSurpriseLink = () => {
+    const index = Math.floor(Math.random() * surpriseLinks.length);
+
+    const a = document.createElement("a");
+    a.target = "_blank";
+    a.href = surpriseLinks[index];
+    return a.click();
+  };
+
   useEffect(() => {
     checkIdentifier();
   }, []);
@@ -146,7 +160,14 @@ function App() {
             )}
           </div>
           <Button onClick={onSubmit}>
-            {!sendingStatus.isSending ? "Send" : "Sending...."}
+            {!sendingStatus.isSending ? (
+              <div className="flex items-center gap-1">
+                <span>Send</span>
+                <ChevronRightIcon />
+              </div>
+            ) : (
+              "Sending...."
+            )}
           </Button>
           <Drawer
             shouldScaleBackground
@@ -159,9 +180,6 @@ function App() {
                   <DrawerTitle className="text-center">
                     Thanks for filling out this form!
                   </DrawerTitle>
-                  <DrawerDescription className="text-center">
-                    Here's a cat picture!
-                  </DrawerDescription>
                 </DrawerHeader>
                 <div></div>
                 <DrawerFooter className="flex">
@@ -171,7 +189,7 @@ function App() {
                   <Button
                     className="w-full"
                     variant="outline"
-                    onClick={onCloseDrawer}
+                    onClick={goToSurpriseLink}
                   >
                     Nah, surprise me
                   </Button>
