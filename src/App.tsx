@@ -1,8 +1,8 @@
 import "@/global.css";
 import "@fontsource-variable/plus-jakarta-sans";
 
-import { useState } from "react";
 import { Logo } from "./components/logo";
+import { useEffect, useState } from "react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import {
@@ -13,6 +13,8 @@ import {
   DrawerContent,
   DrawerDescription,
 } from "./components/ui/drawer";
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "./lib/supabase";
 
 interface Message {
   isError?: boolean;
@@ -25,6 +27,11 @@ interface SendingStatus {
   isSending: boolean;
 }
 
+const supabase = createClient<Database>(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
 function App() {
   const [sendingStatus, setSendingStatus] = useState<SendingStatus>({
     isSend: false,
@@ -33,21 +40,67 @@ function App() {
 
   const [message, setMessage] = useState<Message>();
 
-  const onSubmit = () => {
+  /**
+   * set identifier to message, or genereate a new identifier
+   */
+  const checkIdentifier = () => {
+    const IDENTIFIER_KEY = "you-got-me";
+
+    const setNewIdentifier = () => {
+      const identifier = navigator.userAgent + `;key: ${Math.random() * 10000}`;
+
+      localStorage.setItem(IDENTIFIER_KEY, JSON.stringify(identifier));
+
+      setMessage({ identifier: identifier });
+    };
+
+    const value = localStorage.getItem(IDENTIFIER_KEY);
+
+    if (!value) return setNewIdentifier();
+
+    try {
+      const identifier = JSON.parse(value);
+
+      if (typeof identifier !== "string") throw Error("invalid idenfifier");
+
+      return setMessage({ identifier: identifier });
+    } catch (error) {
+      return setNewIdentifier();
+    }
+  };
+
+  /**
+   * submit a data
+   *
+   * @returns
+   */
+  const onSubmit = async () => {
     setSendingStatus({ ...sendingStatus, isSending: true });
 
     if (!message?.message || message.message.trim() === "") {
       return setMessage({ ...message, isError: true });
     }
 
+    await supabase.from("questions").insert({
+      message: message.message,
+      identifier: message.identifier,
+    });
+
     setSendingStatus({ isSend: true, isSending: false });
   };
 
+  /**
+   * close drawer and reset the form
+   */
   const onCloseDrawer = () => {
     setSendingStatus({ isSend: false, isSending: false });
 
     setMessage({ ...message, message: "", isError: false });
   };
+
+  useEffect(() => {
+    checkIdentifier();
+  }, []);
 
   return (
     <div
@@ -79,6 +132,7 @@ function App() {
           <div>
             <Textarea
               rows={5}
+              autoFocus
               value={message?.message}
               className="bg-background"
               onChange={(e) =>
@@ -87,33 +141,39 @@ function App() {
             />
             {message?.isError && (
               <div className="text-xs text-destructive font-semibold">
-                Hmm, say a word please
+                Can you say a word for me? Thanks!
               </div>
             )}
           </div>
-          <Button onClick={onSubmit}>Send</Button>
-          <Drawer shouldScaleBackground open={sendingStatus.isSend}>
+          <Button onClick={onSubmit}>
+            {!sendingStatus.isSending ? "Send" : "Sending...."}
+          </Button>
+          <Drawer
+            shouldScaleBackground
+            onClose={onCloseDrawer}
+            open={sendingStatus.isSend}
+          >
             <DrawerContent>
               <div className="max-w-sm container">
                 <DrawerHeader>
                   <DrawerTitle className="text-center">
-                    Thank You For Filling this form
+                    Thanks for filling out this form!
                   </DrawerTitle>
                   <DrawerDescription className="text-center">
-                    here is a cat picture
+                    Here's a cat picture!
                   </DrawerDescription>
                 </DrawerHeader>
                 <div></div>
                 <DrawerFooter className="flex">
                   <Button className="w-full" onClick={onCloseDrawer}>
-                    Another message?
+                    Send another message?
                   </Button>
                   <Button
                     className="w-full"
                     variant="outline"
                     onClick={onCloseDrawer}
                   >
-                    No, just give me surprise
+                    Nah, surprise me
                   </Button>
                 </DrawerFooter>
               </div>
